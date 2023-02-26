@@ -26,6 +26,13 @@ const Toolbar = ({
         setCustomStyleState,
         editorStyle,
         setEditorStyle,
+        promptForLink,
+        confirmLink,
+        removeLink,
+        linkPopup,
+        setLinkPopup,
+        urlValue,
+        setUrlValue,
         editorRef})=>{
 
     const [textcolor, setTextColor] = useState("#000000");
@@ -208,10 +215,10 @@ const Toolbar = ({
                 </div>
             </div>
             <div className="link-container">
-                <div className="text-format-buttons">
+                <div className="text-format-buttons" onClick={promptForLink}>
                     <img className="img-icons" src={HyperLink} ></img>
                 </div>
-                <div className="text-format-buttons">
+                <div className="text-format-buttons" onClick={removeLink}>
                     <img className="img-icons" src={HyperLinkOff}></img>
                 </div>
             </div>
@@ -246,6 +253,18 @@ const Toolbar = ({
                     <img className="img-icons" src={FormatRight}></img>
                 </div>
             </div>
+            <div className={linkPopup?"modalactive":"modal"}>
+                <div className="modal-content">
+                    <div>
+                        <input value={urlValue} onChange={(e)=>{setUrlValue(e.target.value)}}></input>
+                    </div>
+                    <div className="popup-buttons">
+                        <button className="popup-button" onMouseDown={confirmLink}>Confirm</button>
+                        <button className="popup-button" onClick={()=>{setLinkPopup(false)}}>Cancel</button>
+                    </div>
+                </div>
+            </div>
+
         </div>
     )
 }

@@ -3,13 +3,50 @@ import './App.css';
 import Toolbar from './Toolbar';
 import {TextColorPicker} from "./TextColorPicker";
 import { useState, useRef, useEffect } from 'react';
-import { Editor,EditorState, RichUtils, Modifier, convertToRaw } from "draft-js";
+import { Editor,EditorState, RichUtils, Modifier, convertToRaw , CompositeDecorator} from "draft-js";
 
+
+
+
+function findLinkEntities(contentBlock, callback, contentState) {
+  contentBlock.findEntityRanges(
+    (character) => {
+      const entityKey = character.getEntity();
+      return (
+        entityKey !== null &&
+        contentState.getEntity(entityKey).getType() === 'LINK'
+      );
+    },
+    callback
+  );
+}
+
+
+const Link = (props) => {
+  const {url} = props.contentState.getEntity(props.entityKey).getData();
+  return (
+    <a href={url} style={{color: "blue"}}>
+      {props.children}
+    </a>
+  );
+};
 
 function App() {
+
+  const decorator = new CompositeDecorator([
+    {
+      strategy: findLinkEntities,
+      component: Link,
+    },
+  ]);
+
   const [editorState, setEditorState] = useState(
-    EditorState.createEmpty()
+    EditorState.createEmpty(decorator)
   );
+
+  const [urlValue, setUrlValue] = useState("");
+
+  const [linkPopup, setLinkPopup] = useState(false);
 
   const editor = useRef(null);
 
@@ -144,26 +181,75 @@ function App() {
     focusEditor();
   }, []);
 
-  
+  const promptForLink = (e) =>{
+    e.preventDefault();
+    const selection = editorState.getSelection();
+    if (!selection.isCollapsed()) {
+      const contentState = editorState.getCurrentContent();
+      const startKey = editorState.getSelection().getStartKey();
+      const startOffset = editorState.getSelection().getStartOffset();
+      const blockWithLinkAtBeginning = contentState.getBlockForKey(startKey);
+      const linkKey = blockWithLinkAtBeginning.getEntityAt(startOffset);
+      let url = '';
+      if (linkKey) {
+        const linkInstance = contentState.getEntity(linkKey);
+        url = linkInstance.getData().url;
+      }
 
-  const setFocusToEnd = ()=>{
-    const newState = EditorState.moveFocusToEnd(editorState);
-    setEditorState(newState);
+      setUrlValue(url);
+      setLinkPopup(true);
+
+      // this.setState({
+      //   showURLInput: true,
+      //   urlValue: url,
+      // }, () => {
+      //   setTimeout(() => this.refs.url.focus(), 0);
+      // });
+    }
   }
 
-  // const handleEditorChange = newEditorState => {
-  //   const currentContentTextLength = editorState.getCurrentContent().getPlainText().length;
-  //   const newContentTextLength = newEditorState.getCurrentContent().getPlainText().length;
-  //   console.log(currentContentTextLength);
-  //   console.log(newContentTextLength);
-  //   if (currentContentTextLength === 0 && newContentTextLength === 1) {
-  //     // WORKAROUND: listens to input changes and focuses/moves cursor to back after typing in first character
-  //     setEditorState(EditorState.moveFocusToEnd(newEditorState));
-  //   }
-  //   else {
-  //     setEditorState(newEditorState);
-  //   }
-  // }
+
+  const confirmLink = (e) => {
+    e.preventDefault();
+    const contentState = editorState.getCurrentContent();
+
+    const contentStateWithEntity = contentState.createEntity(
+      'LINK',
+      'MUTABLE',
+      {url: urlValue}
+    );
+    const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
+    
+    // Apply entity
+    let nextEditorState = EditorState.set(editorState, 
+      { currentContent: contentStateWithEntity }
+    );
+
+    // Apply selection
+    nextEditorState = RichUtils.toggleLink( nextEditorState, 
+      nextEditorState.getSelection(), entityKey 
+    );
+    
+    setEditorState(nextEditorState);
+    setLinkPopup(false);
+    setUrlValue("");
+    // this.setState({
+    //   editorState: nextEditorState,
+    //   showURLInput: false,
+    //   urlValue: '',
+    // }, () => {
+    //   setTimeout(() => this.refs.editor.focus(), 0);
+    // });
+  }
+
+  const removeLink = (e) => {
+    e.preventDefault();
+    const selection = editorState.getSelection();
+    if (!selection.isCollapsed()) {
+      setEditorState(RichUtils.toggleLink(editorState, selection, null))
+    }
+  }
+
 
   const toggleInlineStyle = inlineStyle => {
     editor.current.focus();
@@ -176,9 +262,6 @@ function App() {
       setEditorState(RichUtils.toggleInlineStyle(editorState, inlineStyle))
     }
   };
-
-
-
 
 
   const toggleBlockType = blockStyle =>{
@@ -203,7 +286,14 @@ function App() {
             customStyleState={customStyleState} 
             setCustomStyleState={setCustomStyleState}
             editorStyle={editorStyle}
-            setEditorStyle={setEditorStyle} 
+            setEditorStyle={setEditorStyle}
+            promptForLink={promptForLink}
+            confirmLink={confirmLink}
+            removeLink={removeLink}
+            linkPopup={linkPopup}
+            setLinkPopup={setLinkPopup}
+            urlValue={urlValue}
+            setUrlValue={setUrlValue}
           ></Toolbar>
         <div style={editorStyle}>
           <Editor
@@ -213,11 +303,6 @@ function App() {
             onChange={editorState => setEditorState(editorState)}
           />
         </div>
-        
-        <button onClick={()=>{
-          let rawState = convertToRaw(editorState.getCurrentContent())
-          console.log(rawState);
-        }}>Raw</button>
     </div>
   );
 }
