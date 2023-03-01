@@ -1,5 +1,5 @@
-#React-rich-editor
+# React-rich-editor
 
-#Demo
+# Demo
 
 https://d3d9vj1fneekw1.cloudfront.net/
