@@ -10,9 +10,10 @@ import StrikeThrough from "./images/strikethrough_s_FILL0.png";
 import FormatLeft from "./images/format_align_left.png";
 import FormatRight from "./images/format_align_right.png";
 import FormatCenter from "./images/format_align_center.png";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TextColorPicker } from "./TextColorPicker";
 import { BackgroundColorPicker } from "./BackgroundColorPicker";
+import {convertToRaw} from "draft-js";
 import * as _ from "lodash";
 
 import "./Toolbar.css";
@@ -33,10 +34,14 @@ const Toolbar = ({
         setLinkPopup,
         urlValue,
         setUrlValue,
-        editorRef})=>{
+        editorRef,
+        editorState
+    })=>{
 
     const [textcolor, setTextColor] = useState("#000000");
     const [backgroundColor, setBackgroundColor] = useState("#ffffff")
+
+    const [initedit, setinitedit] = useState(false);
 
     const [bold, setBold] = useState(false);
 
@@ -180,6 +185,22 @@ const Toolbar = ({
         }
         setTextColor(color);
         toggleInlineStyle(colorkey);
+    }
+
+    useEffect(()=>{
+        let rawState = convertToRaw(editorState.getCurrentContent());
+        console.log(rawState);
+        if(rawState.blocks.length==1&&rawState.blocks[0].text==""&&initedit==false){
+        console.log("in init editor")
+        setinitedit(true)
+        initEditor()
+    }
+    },[editorState,initedit])
+
+    const initEditor = ()=>{
+        toggleInlineStyle("FONT_FAMILY_ARIAL");
+        toggleColor("#000000");
+        toggleInlineStyle("FONT_SIZE_14");
     }
 
     return(

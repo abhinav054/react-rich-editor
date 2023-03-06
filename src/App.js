@@ -4,7 +4,7 @@ import Toolbar from './Toolbar';
 import {TextColorPicker} from "./TextColorPicker";
 import { useState, useRef, useEffect } from 'react';
 import { Editor,EditorState, RichUtils, Modifier, convertToRaw , CompositeDecorator} from "draft-js";
-
+import {stateToHTML} from 'draft-js-export-html';
 
 
 
@@ -158,6 +158,87 @@ function App() {
   })
 
 
+  const exportHtmlStyle={
+    FONT_SIZE_8:{
+      style:{fontSize: "8px"}
+      
+    },
+    FONT_SIZE_9:{
+      style:{fontSize: "9px"}
+      
+    },
+    FONT_SIZE_10:{
+      style:{
+        fontSize: "10px"
+      }
+      
+    },
+    FONT_SIZE_11:{
+      style:{
+        fontSize: "11px"
+      }
+      
+    },
+    FONT_SIZE_12:{
+      style:{
+        fontSize: "12px"
+      }
+      
+    },
+    FONT_SIZE_14:{
+      style:{
+        fontSize: "14px"
+      }
+      
+    },
+    FONT_SIZE_16:{
+      style:{
+        fontSize: "16px"
+      }
+      
+    },
+    FONT_SIZE_18:{
+      style:{
+        fontSize: "18px"
+      }
+      
+    },
+    FONT_SIZE_20:{
+      style:{
+        fontSize: "20px"
+      }
+      
+    },
+    FONT_SIZE_22:{
+      style:{
+        fontSize: "22px"
+      }
+      
+    },
+    FONT_SIZE_24:{
+      style:{
+        fontSize: "24px"
+      }
+      
+    },
+    FONT_SIZE_26:{
+      fontSize: "26px"
+    },
+    FONT_SIZE_28:{
+      fontSize: "28px"
+    },
+    FONT_SIZE_36: {
+      fontSize: "36px"
+    },
+    FONT_SIZE_48:{
+      fontSize: "48px"
+    },
+    FONT_SIZE_72:{
+      fontSize: "72px"
+    }, 
+  }
+
+
   const customStyle = {
     STRIKETHROUGH: {
       textDecoration: "line-through"
@@ -277,6 +358,20 @@ function App() {
 
   }
 
+  // useEffect(()=>{
+  //   let rawState = convertToRaw(editorState.getCurrentContent());
+  //   console.log(rawState);
+  //   if(rawState.blocks.length==1&&rawState.blocks[0].text==""){
+  //     console.log("in init editor")
+  //     Toolbar.initEditor();
+  //   }
+  // },[editorState])
+
+  const convertToHtml = ()=>{
+    let html = stateToHTML(editorState.getCurrentContent(),{inlineStyles: exportHtmlStyle});
+    console.log(html);
+  }
+
   return (
     <div className="App">
         <Toolbar 
@@ -294,6 +389,7 @@ function App() {
             setLinkPopup={setLinkPopup}
             urlValue={urlValue}
             setUrlValue={setUrlValue}
+            editorState = {editorState}
           ></Toolbar>
         <div style={editorStyle}>
           <Editor
@@ -303,6 +399,10 @@ function App() {
             onChange={editorState => setEditorState(editorState)}
           />
         </div>
+
+        <button onClick={convertToHtml}>
+          Html
+        </button>
     </div>
   );
 }
